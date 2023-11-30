@@ -8,10 +8,14 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const PORT = process.env.PORT || 3000;
 const path = require('path');
-const ExpressError = require('./utils/ExpressError'); 
+const ExpressError = require('./utils/ExpressError');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const User = require('./models/user');
 
-const campgrounds = require('./routes/campgrounds');  //import campgrounds route
-const reviews = require('./routes/reviews'); //import reviews route
+const campgroundsRoutes = require('./routes/campgrounds');  //import campgrounds route
+const reviewsRoutes = require('./routes/reviews'); //import reviews route
+const userRoutes = require('./routes/user'); //import user-routes route
 
 mongoose.connect('mongodb://127.0.0.1:27017/yelp_camp'); //connecting to the database
 
@@ -42,7 +46,20 @@ app.use(flash());  //using connect-flash() middleware to store flash messages in
 
 app.use(express.static(path.join(__dirname, 'public')));  //using static() middleware to serve static files.
 
+app.use(passport.initialize());  //using passport.initialize() middleware to initialize passport.
+app.use(passport.session());  //using passport.session() middleware to store the user's session in the session store.
+passport.use(new LocalStrategy(User.authenticate())); //Setting passport to use the local strategy and setting the authentication method for local strategy to be the static method/function 'authenticate' on our User model. This method is added in our user model automatically when we wrote this - "userSchema.plugin(passportLocalMongoose);"
+
+passport.serializeUser(User.serializeUser()); //Specify a function to passport to determine how we want to store a user object in the session. The function we specify is a static method on our User model that was passed in by calling - "userSchema.plugin(passportLocalMongoose);"
+
+passport.deserializeUser(User.deserializeUser());
+//Specify a function to passport to determine how we want to retrieve a user object in the session."
+
 app.use((req, res, next) => {  //Setting up a middleware to add local variables to the response object that we can access in all our views templates.
+    if(!['/login', '/'].includes(req.originalUrl)){
+        req.session.returnTo = req.originalUrl;
+    }
+    res.locals.currentUser = req.user; //
     res.locals.success = req.flash('success');  //Assigning the success flash message to the response.locals object.
     res.locals.error = req.flash('error');  //Assigning the error flash message to the response.locals object.
     next(); //next() is the next middleware in the middleware chain.
@@ -52,12 +69,12 @@ app.use(methodOverride('_method'));  //using methodOverride() middleware to pars
 
 app.use(express.urlencoded({ extended: true }));  //using express.urlencoded() middleware to parse the request body.
 
-app.use('/campgrounds', campgrounds); // using campgrounds route as middleware.
-app.use('/campgrounds/:id/reviews', reviews); // using reviews route as middleware.
+app.use('/campgrounds', campgroundsRoutes); // using campgrounds route as middleware.
+app.use('/campgrounds/:id/reviews', reviewsRoutes); // using reviews route as middleware.
+app.use('/', userRoutes); //using user-routes route as middleware.
 
 app.set('view engine', 'ejs'); //Setting EJS as the view engine.
 app.set('views', path.join(__dirname, 'views')); //Setting the views folder as the view
-
 
 app.get('/', (req, res) => {
     res.render('campgrounds/home');
