@@ -76,6 +76,7 @@ app.use('/', userRoutes); //using user-routes route as middleware.
 app.set('view engine', 'ejs'); //Setting EJS as the view engine.
 app.set('views', path.join(__dirname, 'views')); //Setting the views folder as the view
 
+//Home Route
 app.get('/', (req, res) => {
     res.render('campgrounds/home');
 });
