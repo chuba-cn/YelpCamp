@@ -39,7 +39,7 @@
                 </div>
                 
                 <div class="mb-3">
-                    <label for="">Add Image(s)</label>
+                    <label for="">Add more images</label>
                     <div class="form-file custom-file">
                         <input type="file" name="image" class="form-file-input" id="imageFile" multiple>
                         <label for="imageFile" class="form-file-label">
@@ -48,15 +48,22 @@
                         </label>
                     </div>
                 </div>
-                
+               
                 <div class="mb-3">
-                    <% campground.images.forEach((img, index) => { %>
-                     <img src="<%= img.thumbnail %>" class="img-thumbnail" alt="">
-                     <div class="form-check-inline">
-                        <input type="checkbox" name="deleteImages[]" id="img-<%= index %>" value="<%= img.filename %>">
-                        <label for="img-<%= index %>">Delete?</label>
-                     </div>
-                    <% }) %>
+                    <h6>Delete Images:</h6>
+                    <div class=" row row-cols-1 row-cols-md-4 g-4 mb-3">
+                        <% campground.images.forEach((img, index) => { %>
+                            <div class="col">
+                                <div class="card">
+                                    <img src="<%= img.thumbnail %>" class="card-img">
+                                    <div class="card-img-overlay text-end pt-1 pe-2">
+                                        <label for="img-<%= index %>" class="visually-hidden"></label>
+                                        <input type="checkbox" name="deleteImages[]" value="<%= img.filename %>" id="img-<%= index %>" class="form-check-input">
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
                 </div>
 
                 <div class="mb-3">

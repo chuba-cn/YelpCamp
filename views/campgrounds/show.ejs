@@ -1,7 +1,11 @@
 <% layout('layouts/boilerplate') %>
 <link rel="stylesheet" href="/stylesheets/stars.css">
+
 <div class="row">
     <div class="col-6">
+
+        <!-- Mapbox map -->
+        <div id='map' style='width: 400px; height: 300px;'></div>
 
         <div id="campgroundCarousel" class="carousel slide" data-bs-ride="carousel">
 
@@ -117,3 +121,11 @@
         <% } %>
     </div>
 </div>
+
+<!-- Script to display a mapbox map -->
+<script>
+    const mapboxToken = '<%- process.env.MAPBOX_TOKEN %>'
+    const campground = <%- JSON.stringify(campground) %>
+</script>
+
+<script src="/javascripts/showPageMap.js"></script>
