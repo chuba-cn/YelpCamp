@@ -1,4 +1,6 @@
+const campground = require('../models/campground');
 const Campground = require('../models/campground');
+const {cloudinary} = require('../cloudinary/index');
 
 module.exports.index = async (req, res) => {
     const campgrounds = await Campground.find({});
@@ -27,6 +29,9 @@ module.exports.showCampground = async (req, res) => {
 
 module.exports.createCampground = async (req, res) => {
     const campground = new Campground(req.body.campground);
+    campground.images = req.files.map(imgObj => {
+        return {url: imgObj.path, filename: imgObj.filename};
+    });
     campground.author = req.user._id;
     await campground.save();
     //flashing a success message to the user once the campground has been created successfully and saved to the database.
@@ -45,7 +50,21 @@ module.exports.renderEditForm = async (req, res) => {
 
 module.exports.updateCampground = async (req, res) => {
     const campground = await Campground.findByIdAndUpdate(req.params.id, {...req.body.campground}, {runValidators: true});
-    req.flash('success', 'Successfully updated campground')
+    const newImages = req.files.map((imgObj) => {
+        return {url: imgObj.path, filename: imgObj.filename}
+    });
+    campground.images.push(...newImages);
+    campground.save();
+    //Deleting selected images on the found campground
+    if(req.body.deleteImages){
+        //Delete the checkbox selected files whose filename is stored in the req.body.deleteImages array from cloudinary itself
+        for(let filename of req.body.deleteImages){
+            await cloudinary.uploader.destroy(filename);
+        }
+        //pull from the "images" array in the found campground where the filename is in "req.body.deleteImages"
+        await campground.updateOne({$pull: {images: {filename: {$in: req.body.deleteImages}}}});
+    }
+    req.flash('success', 'Successfully updated campground');
     res.redirect(`/campgrounds/${campground._id}`);
 };
 
@@ -53,4 +72,4 @@ module.exports.deleteCampground = async (req, res) => {
     await Campground.findByIdAndDelete(req.params.id);
     req.flash('success', 'Successfully deleted campground');
     res.redirect('/campgrounds');
-} ;
+};
