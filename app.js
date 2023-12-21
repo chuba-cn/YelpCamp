@@ -82,7 +82,7 @@ app.set('views', path.join(__dirname, 'views')); //Setting the views folder as t
 
 //Home Route
 app.get('/', (req, res) => {
-    res.render('campgrounds/home');
+    res.render('home');
 });
 
 //error handling middleware when a route is not found. This will throw an error based on our pre-defined error class which extends the Error class.
