@@ -1,4 +1,6 @@
 #cluster-map {
+    border-radius: 10px;
+    border: 5px double grey;
     width: 100%;
     height: 500px;
 }
