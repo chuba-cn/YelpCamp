@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const flash = require('connect-flash');
 const PORT = process.env.PORT || 3000;
 const path = require('path');
@@ -22,8 +23,9 @@ const helmet = require('helmet');
 const campgroundsRoutes = require('./routes/campgrounds');  //import campgrounds route
 const reviewsRoutes = require('./routes/reviews'); //import reviews route
 const userRoutes = require('./routes/user'); //import user-routes route
+const dbUrl = 'mongodb://127.0.0.1:27017/yelp_camp';
 
-mongoose.connect('mongodb://127.0.0.1:27017/yelp_camp'); //connecting to the database
+mongoose.connect(dbUrl); //connecting to the database
 
 const db = mongoose.connection; 
 
@@ -34,7 +36,20 @@ db.once('open', () => {
 
 app.engine('ejs', ejsMate);
 
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    touchAfter: 24 * 60 * 60, //time in seconds
+    crypto: {
+        secret: 'Super secret secret'
+    }
+});
+
+store.on('error', function(error){
+    console.log('SESSION STORE ERROR', error);
+})
+
 const sessionConfig = {
+    store,
     name: 'yelp.session',
     secret: 'Super secret secret',
     resave: false,
