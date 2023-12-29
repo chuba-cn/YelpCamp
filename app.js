@@ -16,6 +16,8 @@ const ExpressError = require('./utils/ExpressError');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const User = require('./models/user');
+const mongoSanitize = require('express-mongo-sanitize');
+const helmet = require('helmet');
 
 const campgroundsRoutes = require('./routes/campgrounds');  //import campgrounds route
 const reviewsRoutes = require('./routes/reviews'); //import reviews route
@@ -33,11 +35,13 @@ db.once('open', () => {
 app.engine('ejs', ejsMate);
 
 const sessionConfig = {
+    name: 'yelp.session',
     secret: 'Super secret secret',
     resave: false,
     saveUninitialized: true,
     cookie: {
         httpOnly: true,
+        // secure: true  //ensures that our cookies are only configured, stored and accesed over https only
         expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
         maxAge: 1000 * 60 * 60 * 24 * 7
     }
@@ -51,7 +55,56 @@ app.use(flash());  //using connect-flash() middleware to store flash messages in
 app.use(express.static(path.join(__dirname, 'public')));  //using static() middleware to serve static files.
 
 app.use(passport.initialize());  //using passport.initialize() middleware to initialize passport.
+
 app.use(passport.session());  //using passport.session() middleware to store the user's session in the session store.
+
+app.use(mongoSanitize()); //Using monog sanitize middleware to sanitize received inputs and remove any offending keys or replace the characters with a 'safe' one for our mongo database.
+
+//Helmet security configs
+const scriptSrcUrls = [
+    "https://stackpath.bootstrapcdn.com/",
+    "https://api.tiles.mapbox.com/",
+    "https://api.mapbox.com/",
+    "https://kit.fontawesome.com/",
+    "https://cdnjs.cloudflare.com/",
+    "https://cdn.jsdelivr.net",
+];
+const styleSrcUrls = [
+    "https://kit-free.fontawesome.com/",
+    "https://stackpath.bootstrapcdn.com/",
+    "https://api.mapbox.com/",
+    "https://api.tiles.mapbox.com/",
+    "https://fonts.googleapis.com/",
+    "https://use.fontawesome.com/",
+];
+const connectSrcUrls = [
+    "https://api.mapbox.com/",
+    "https://a.tiles.mapbox.com/",
+    "https://b.tiles.mapbox.com/",
+    "https://events.mapbox.com/",
+];
+const fontSrcUrls = [];
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: [],
+      connectSrc: ["'self'", ...connectSrcUrls],
+      scriptSrc: ["'unsafe-inline'", "'self'", ...scriptSrcUrls],
+      styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+      workerSrc: ["'self'", "blob:"],
+      objectSrc: [],
+      imgSrc: [
+        "'self'",
+        "blob:",
+        "data:",
+        `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/`, //SHOULD MATCH YOUR CLOUDINARY ACCOUNT!
+        "https://images.unsplash.com/",
+      ],
+      fontSrc: ["'self'", ...fontSrcUrls]
+    },
+  })
+);
+
 passport.use(new LocalStrategy(User.authenticate())); //Setting passport to use the local strategy and setting the authentication method for local strategy to be the static method/function 'authenticate' on our User model. This method is added in our user model automatically when we wrote this - "userSchema.plugin(passportLocalMongoose);"
 
 passport.serializeUser(User.serializeUser()); //Specify a function to passport to determine how we want to store a user object in the session. The function we specify is a static method on our User model that was passed in by calling - "userSchema.plugin(passportLocalMongoose);"
