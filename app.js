@@ -23,7 +23,7 @@ const helmet = require('helmet');
 const campgroundsRoutes = require('./routes/campgrounds');  //import campgrounds route
 const reviewsRoutes = require('./routes/reviews'); //import reviews route
 const userRoutes = require('./routes/user'); //import user-routes route
-const dbUrl = process.env.DB_URL;
+const dbUrl = process.env.DB_URL || 'mongodb://127.0.0.1:27017/yelp_camp';
 
 mongoose.connect(dbUrl); //connecting to the database
 
